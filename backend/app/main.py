@@ -1,26 +1,23 @@
 """
-SAP Co-Pilot Companion App – FastAPI backend entry point.
+Metatron / SAP Co-Pilot experimental backend.
 
-Endpoints
-─────────
-POST /link/       Exchange Plaid public token for access token
-POST /analyze/    Full portfolio analysis (SAP + Behavior + Threat Intel)
-GET  /stage/{n}   Return SAP stage description for stage n (0-9)
-GET  /health      Liveness probe
+Plaid access tokens remain server-side in a process-local session map and are
+never returned to the browser. This is a single-process prototype, not a
+multi-user production deployment; use persistent encrypted storage and
+authentication before handling real customer accounts.
 """
 
-from fastapi import FastAPI, HTTPException
+import logging
+import os
+import secrets
+from typing import Optional, List, Dict, Any
+
+from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
-import logging
 
 from .luminark_core import LuminarkAI
 from .plaid_client import PlaidClient
-
-# ---------------------------------------------------------------------------
-# App setup
-# ---------------------------------------------------------------------------
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("sap_copilot")
@@ -28,46 +25,43 @@ logger = logging.getLogger("sap_copilot")
 app = FastAPI(
     title="SAP Co-Pilot Companion App",
     description=(
-        "LUMINARK AI – Stanfields Axiom of Perpetuity stage engine, "
-        "NAM user behaviour analysis, and cybersecurity threat intelligence."
+        "Experimental portfolio reflection prototype using the owner's SAP "
+        "stage framework, keyword-based user-behavior heuristics, and optional "
+        "mock threat examples. Not investment advice or a validated risk model."
     ),
     version="1.0.0",
 )
 
+allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("METATRON_ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # tighten in production
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
-
-# ---------------------------------------------------------------------------
-# Singletons
-# ---------------------------------------------------------------------------
 
 ai_engine = LuminarkAI()
 plaid = PlaidClient()
-
-# ---------------------------------------------------------------------------
-# Request / Response models
-# ---------------------------------------------------------------------------
+# Process-local only. Tokens are not persisted and are lost on restart.
+app.state.plaid_tokens = {}
+COOKIE_SECURE = os.getenv("METATRON_COOKIE_SECURE", "true").strip().lower() not in {"0", "false", "no"}
 
 
 class LinkRequest(BaseModel):
-    public_token: str = Field(..., description="Plaid public token from Link UI")
+    public_token: str = Field(..., min_length=1, description="Plaid public token from Link UI")
 
 
 class LinkResponse(BaseModel):
     status: str
-    access_token: str
 
 
 class AnalyzeRequest(BaseModel):
-    access_token: str = Field(..., description="Plaid access token")
-    notes: Optional[List[str]] = Field(
-        default=[], description="User trading journal entries"
-    )
+    notes: Optional[List[str]] = Field(default_factory=list, description="User trading journal entries")
 
 
 class HoldingAnalysis(BaseModel):
@@ -111,47 +105,68 @@ class StageInfo(BaseModel):
     description: str
 
 
-# ---------------------------------------------------------------------------
-# Endpoints
-# ---------------------------------------------------------------------------
-
-
 @app.get("/health", tags=["Meta"])
 async def health():
-    return {"status": "ok", "version": "1.0.0"}
+    return {"status": "ok", "version": "1.0.0", "mode": "demo" if plaid.demo_mode else "plaid"}
 
 
 @app.post("/link/", response_model=LinkResponse, tags=["Plaid"])
-async def link_account(req: LinkRequest):
-    """
-    Exchange a Plaid Link public token for a permanent access token.
-    Store the returned access_token securely (encrypted) per user.
-    """
+async def link_account(req: LinkRequest, request: Request, response: Response):
+    """Exchange the one-time public token and keep the access token server-side."""
     try:
         access_token = plaid.exchange_public_token(req.public_token)
-        logger.info("Plaid account linked successfully.")
-        return LinkResponse(status="linked", access_token=access_token)
+        session_id = request.cookies.get("metatron_session") or secrets.token_urlsafe(32)
+        app.state.plaid_tokens[session_id] = access_token
+        response.set_cookie(
+            key="metatron_session",
+            value=session_id,
+            httponly=True,
+            secure=COOKIE_SECURE,
+            samesite="strict",
+            max_age=60 * 60 * 24,
+            path="/",
+        )
+        response.headers["Cache-Control"] = "no-store"
+        logger.info("Plaid item linked to an ephemeral browser session.")
+        return LinkResponse(status="linked")
     except Exception as exc:
-        logger.error("Plaid link failed: %s", exc)
-        raise HTTPException(status_code=502, detail=f"Plaid error: {exc}") from exc
+        logger.error("Plaid link failed: %s", type(exc).__name__)
+        raise HTTPException(
+            status_code=503,
+            detail="Plaid is not configured or the link exchange failed.",
+        ) from exc
+
+
+@app.post("/unlink/", tags=["Plaid"])
+async def unlink_account(request: Request, response: Response):
+    """Remove the current browser session's in-memory access token."""
+    session_id = request.cookies.get("metatron_session")
+    if session_id:
+        app.state.plaid_tokens.pop(session_id, None)
+    response.delete_cookie(
+        key="metatron_session",
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="strict",
+        path="/",
+    )
+    return {"status": "unlinked"}
 
 
 @app.post("/analyze/", response_model=AnalysisResponse, tags=["Analysis"])
-async def analyze(req: AnalyzeRequest):
-    """
-    Full portfolio analysis:
-    1. Fetch holdings & transactions from Plaid
-    2. Run SAP Stage Engine on each asset (Brain)
-    3. Analyse user behaviour for cognitive traps (Heart)
-    4. Scan for external threats per ticker (Body)
-    5. Return consolidated LUMINARK report with recommendations
-    """
+async def analyze(req: AnalyzeRequest, request: Request):
+    """Analyze the portfolio linked to the current browser session."""
+    session_id = request.cookies.get("metatron_session")
+    access_token = app.state.plaid_tokens.get(session_id) if session_id else None
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Link a brokerage account before requesting an analysis.")
+
     try:
-        holdings = plaid.get_holdings(req.access_token)
-        transactions = plaid.get_transactions(req.access_token)
+        holdings = plaid.get_holdings(access_token)
+        transactions = plaid.get_transactions(access_token)
     except Exception as exc:
-        logger.error("Failed to fetch Plaid data: %s", exc)
-        raise HTTPException(status_code=502, detail=f"Plaid data fetch failed: {exc}") from exc
+        logger.error("Plaid data fetch failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=502, detail="Portfolio data could not be retrieved.") from exc
 
     user_data: Dict[str, Any] = {
         "holdings": holdings,
@@ -162,8 +177,8 @@ async def analyze(req: AnalyzeRequest):
     try:
         result = ai_engine.analyze_portfolio(user_data)
     except Exception as exc:
-        logger.error("Analysis engine error: %s", exc)
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}") from exc
+        logger.error("Analysis engine failed: %s", type(exc).__name__)
+        raise HTTPException(status_code=500, detail="The exploratory analysis could not be completed.") from exc
 
     return result
 
