@@ -11,6 +11,10 @@ def intel():
     return ThreatIntel(use_mock_data=True)
 
 
+def test_live_alerts_are_disabled_without_a_connected_feed():
+    assert ThreatIntel().scan_asset('GME') == []
+
+
 class TestScanAsset:
     def test_gme_pump_dump(self, intel):
         alerts = intel.scan_asset("GME")
