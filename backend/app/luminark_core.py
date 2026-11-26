@@ -14,10 +14,10 @@ class LuminarkAI:
     Body   → Threat Intel           : scans external threats per ticker
     """
 
-    def __init__(self) -> None:
+    def __init__(self, use_mock_threat_data: bool = False) -> None:
         self.brain = SAPStageEngine()
         self.heart = UserBehaviorAnalyzer()
-        self.body = ThreatIntel()
+        self.body = ThreatIntel(use_mock_data=use_mock_threat_data)
 
     # ---------------------------------------------------------------------------
     # Helpers
