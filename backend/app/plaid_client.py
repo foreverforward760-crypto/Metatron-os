@@ -1,12 +1,9 @@
 """
-Plaid integration layer.
+Plaid integration prototype.
 
-In production:
-  - Install `plaid-python` SDK
-  - Set PLAID_CLIENT_ID, PLAID_SECRET, PLAID_ENV in environment variables
-  - Replace mock methods with real Plaid API calls
-
-Reference: https://plaid.com/docs/investments/
+Mock account data is disabled unless METATRON_DEMO_MODE=true is explicitly set.
+Live use requires plaid-python and PLAID_CLIENT_ID / PLAID_SECRET / PLAID_ENV.
+The current holdings parser still supplies placeholder market indicators.
 """
 
 import os
@@ -50,6 +47,11 @@ class PlaidClient:
         except ImportError:
             # plaid-python not installed – fall back to mock
             return None
+
+    @property
+    def configured(self) -> bool:
+        """Whether a live Plaid SDK client was initialized."""
+        return self._client is not None
 
     # ---------------------------------------------------------------------------
     # Token exchange
