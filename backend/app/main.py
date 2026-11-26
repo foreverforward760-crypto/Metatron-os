@@ -108,7 +108,7 @@ class StageInfo(BaseModel):
 
 @app.get("/health", tags=["Meta"])
 async def health():
-    return {"status": "ok", "version": "1.0.0", "mode": "demo" if plaid.demo_mode else "plaid"}
+    return {"status": "ok", "version": "1.0.0", "mode": "demo" if plaid.demo_mode else "plaid" if plaid.configured else "unconfigured"}
 
 
 @app.post("/link/", response_model=LinkResponse, tags=["Plaid"])
