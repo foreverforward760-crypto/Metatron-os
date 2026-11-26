@@ -19,19 +19,27 @@ class PlaidClient:
     def __init__(self) -> None:
         self.client_id = os.getenv("PLAID_CLIENT_ID", "")
         self.secret = os.getenv("PLAID_SECRET", "")
-        self.env = os.getenv("PLAID_ENV", "sandbox")  # sandbox | development | production
+        self.env = os.getenv("PLAID_ENV", "sandbox").strip().lower()
+        self.demo_mode = os.getenv("METATRON_DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
         self._client = self._init_client()
 
     def _init_client(self) -> Optional[Any]:
+        if self.demo_mode or not self.client_id or not self.secret:
+            return None
         try:
             import plaid
             from plaid.api import plaid_api
             from plaid.model.products import Products
             from plaid.model.country_code import CountryCode
+            environments = {
+                "sandbox": plaid.Environment.Sandbox,
+                "development": plaid.Environment.Development,
+                "production": plaid.Environment.Production,
+            }
+            if self.env not in environments:
+                raise ValueError("PLAID_ENV must be sandbox, development, or production")
             configuration = plaid.Configuration(
-                host=plaid.Environment.Sandbox
-                if self.env == "sandbox"
-                else plaid.Environment.Production,
+                host=environments[self.env],
                 api_key={
                     "clientId": self.client_id,
                     "secret": self.secret,
@@ -49,8 +57,10 @@ class PlaidClient:
 
     def exchange_public_token(self, public_token: str) -> str:
         """Exchange a Plaid public token for a permanent access token."""
+        if self.demo_mode:
+            return "demo_access_token"
         if self._client is None:
-            return f"mock_access_token_{public_token[:8]}"
+            raise RuntimeError("Plaid is not configured. Set PLAID_CLIENT_ID and PLAID_SECRET, or explicitly enable METATRON_DEMO_MODE for mock data.")
 
         from plaid.model.item_public_token_exchange_request import (
             ItemPublicTokenExchangeRequest,
@@ -70,8 +80,10 @@ class PlaidClient:
         Returns a dict keyed by ticker with minimal market data fields
         that the SAP Stage Engine can consume.
         """
-        if self._client is None or access_token.startswith("mock_"):
+        if self.demo_mode and access_token == "demo_access_token":
             return self._mock_holdings()
+        if self._client is None:
+            raise RuntimeError("Plaid client is unavailable; configure credentials or explicitly enable demo mode.")
 
         from plaid.model.investments_holdings_get_request import (
             InvestmentsHoldingsGetRequest,
@@ -104,8 +116,10 @@ class PlaidClient:
 
     def get_transactions(self, access_token: str, days: int = 90) -> list:
         """Fetch recent investment transactions."""
-        if self._client is None or access_token.startswith("mock_"):
+        if self.demo_mode and access_token == "demo_access_token":
             return self._mock_transactions()
+        if self._client is None:
+            raise RuntimeError("Plaid client is unavailable; configure credentials or explicitly enable demo mode.")
 
         from datetime import date, timedelta
         from plaid.model.investments_transactions_get_request import (
