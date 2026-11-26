@@ -4,8 +4,8 @@ from typing import Dict, List, Any
 
 class UserBehaviorAnalyzer:
     """
-    NAM Framework for AI Safety — maps a user's trading behaviour to an SAP
-    stage and detects Stage-8 (overconfidence) cognitive traps.
+    Keyword-based trading-reflection heuristic. It maps selected inputs to SAP stages
+    but is not a validated psychological assessment or AI-safety control.
     """
 
     # Keywords indicating Stage-8 overconfidence trap
@@ -23,16 +23,16 @@ class UserBehaviorAnalyzer:
 
     # Per-stage user-facing descriptions
     STAGE_DESCRIPTIONS: Dict[int, str] = {
-        0: "You're in a reset phase – rebuilding your strategy from scratch.",
-        1: "You're navigating new territory – keep your conviction but stay alert.",
-        2: "You're in a consolidation phase – let the signals clarify before acting.",
-        3: "You're building confidence – good momentum, watch for over-extension.",
-        4: "You're in a healthy foundation – keep doing what works.",
-        5: "You're at a threshold – consider whether to hold, add, or pivot.",
-        6: "You're in flow – but stay adaptable; smooth roads can hide surprises.",
-        7: "You're over-analysing – look for simplicity and act on clearer signals.",
-        8: "⚠️ Trap risk – you're showing overconfidence. Diversify and question assumptions.",
-        9: "You're aware of uncertainty – good for risk management.",
+        0: "PLENARA — a reset or review phase in this prototype.",
+        1: "SPARK OF NAVIGATION — orient to new market conditions and uncertainty.",
+        2: "FORGE OF POLARITY — review conflicting signals and competing interpretations.",
+        3: "ENGINE OF EXPRESSION — review momentum and possible over-extension.",
+        4: "CRUCIBLE OF EQUILIBRIUM — review the stability of the current strategy.",
+        5: "DYNAMO OF WILL — review the decision, its assumptions, and downside exposure.",
+        6: "NEXUS OF HARMONY — review whether smooth conditions are masking risk.",
+        7: "LENS OF DISTILLATION — separate material signals from noise.",
+        8: "VESSEL OF GROUNDING — absolute language triggered a rule-based overconfidence flag; review assumptions.",
+        9: "TRANSPARENCY OF THE GUIDE — uncertainty language was detected in the supplied notes.",
     }
 
     # ---------------------------------------------------------------------------
@@ -48,7 +48,7 @@ class UserBehaviorAnalyzer:
 
     def _holding_period_score(self, transactions: List[Dict]) -> float:
         """
-        Longer average holding period → higher stability score (0-1).
+        Average reported holding period proxy (0-1); not a validated measure of investor stability.
         Uses 'days_held' field if present; falls back to 0.5.
         """
         if not transactions:
@@ -62,8 +62,7 @@ class UserBehaviorAnalyzer:
 
     def _diversification_score(self, holdings: List[Dict]) -> float:
         """
-        More holdings across different sectors → better diversification (0-1).
-        Simple proxy: 5+ holdings ≈ 1.0
+        Holding count proxy only (0-1). This does not inspect sectors, correlations, or position weights.
         """
         n = len(holdings)
         return float(np.clip(n / 5.0, 0.0, 1.0))
