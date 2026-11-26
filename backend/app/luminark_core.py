@@ -119,6 +119,7 @@ class LuminarkAI:
             "user": user_analysis,
             "threats": all_alerts,
             "recommendations": recommendations,
+            "analysis_notice": "Experimental rule-based portfolio reflection. Market indicators may be placeholders, threat alerts are keyword-based, and this output is not investment advice.",
         }
 
     # ---------------------------------------------------------------------------
@@ -136,19 +137,19 @@ class LuminarkAI:
 
         # Stage-specific guidance
         if overall_stage <= 2:
-            recs.append("Consider reducing position sizes until market conditions stabilise.")
+            recs.append("Review concentration and downside scenarios; this stage label is not a buy/sell signal.")
         elif overall_stage in (3, 4):
-            recs.append("Conditions look constructive. Maintain disciplined entry/exit rules.")
+            recs.append("Review entry and exit assumptions against a separately defined risk plan.")
         elif overall_stage == 5:
-            recs.append("You're at a decision threshold. Define your stop-loss and target before acting.")
+            recs.append("Review the decision, its assumptions, invalidation point, and downside exposure before acting.")
         elif overall_stage in (6, 7):
-            recs.append("Trend is extended. Trail stops and be alert for distribution signals.")
+            recs.append("Review whether momentum assumptions remain supported by current, reliable data.")
         elif overall_stage == 8:
             recs.append(
-                "Euphoria stage detected. Tighten risk management; avoid adding new positions at highs."
+                "A rule-based euphoria pattern was flagged. Review sentiment exposure; low volatility is not proof of low risk."
             )
         elif overall_stage == 9:
-            recs.append("Release stage. Consider defensive rotation or raising cash.")
+            recs.append("A terminal-stage pattern was flagged. Review liquidity needs and downside scenarios; this is not a timing signal.")
 
         # Trap risk
         if user.get("trap_risk"):
