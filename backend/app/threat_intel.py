@@ -4,12 +4,8 @@ import re
 
 class ThreatIntel:
     """
-    Cybersecurity encyclopedia–driven threat scanner.
-
-    Scans asset mentions for pump-and-dump schemes, deepfake impersonations,
-    ransomware/breach events, and social-engineering scams.
-
-    In production: wire `_fetch_mentions` to NewsAPI, Reddit, Twitter/X, etc.
+    Experimental keyword scanner. By default it has no live threat-intelligence feed.
+    Mock examples are available only when explicitly enabled for demonstrations.
     """
 
     THREAT_PATTERNS: Dict[str, Dict] = {
@@ -74,7 +70,10 @@ class ThreatIntel:
     SEVERITY_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 
     # ---------------------------------------------------------------------------
-    # Internal data fetch (mock – replace with real APIs in production)
+    def __init__(self, use_mock_data: bool = False) -> None:
+        self.use_mock_data = use_mock_data
+
+    # Internal data fetch (no live provider is currently connected)
     # ---------------------------------------------------------------------------
 
     def _fetch_mentions(self, ticker: str) -> List[str]:
@@ -82,7 +81,10 @@ class ThreatIntel:
         Returns a list of raw text mentions for the ticker.
         Replace with real API calls (NewsAPI, Reddit, Twitter) in production.
         """
-        # Mock mentions – in production these come from external APIs
+        if not self.use_mock_data:
+            return []
+
+        # Static demonstration examples only; these are not live alerts.
         mock_db: Dict[str, List[str]] = {
             "GME": [
                 "GME pumping on Telegram – join the group now!",
