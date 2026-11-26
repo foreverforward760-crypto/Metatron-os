@@ -116,7 +116,10 @@ async def link_account(req: LinkRequest, request: Request, response: Response):
     """Exchange the one-time public token and keep the access token server-side."""
     try:
         access_token = plaid.exchange_public_token(req.public_token)
-        session_id = request.cookies.get("metatron_session") or secrets.token_urlsafe(32)
+        previous_session_id = request.cookies.get("metatron_session")
+        if previous_session_id:
+            app.state.plaid_tokens.pop(previous_session_id, None)
+        session_id = secrets.token_urlsafe(32)
         app.state.plaid_tokens[session_id] = access_token
         response.set_cookie(
             key="metatron_session",
