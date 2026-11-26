@@ -4,7 +4,7 @@ from typing import Dict, Any
 
 class SAPStageEngine:
     """
-    Stanfields Axiom of Perpetuity — maps market data to stages 0-9.
+    Stanfield's Axiom of Perpetuity — maps market data to stages 0-9.
 
     Inversion Principle:
         Odd  stages → physically unstable, consciously stable
@@ -14,16 +14,16 @@ class SAPStageEngine:
     """
 
     STAGE_DESCRIPTIONS: Dict[int, str] = {
-        0: "Plenara (Void/Reset) – Complete reset, post-crash or pre-emergence.",
-        1: "Navigation – First spark of uptrend, high uncertainty, clear vision.",
-        2: "Polarity – Consolidation, forming base, conflicting signals.",
-        3: "Expression – Breakout attempt, high volume, confident move.",
-        4: "Foundation – Sustainable trend, healthy pullbacks, longest phase.",
-        5: "Threshold – Critical decision point, high tension, volatile.",
-        6: "Integration – Peak harmony, smooth trend, low volatility.",
-        7: "Analysis – Divergences appear, distribution, isolated moves.",
-        8: "Unity (Trap) – Euphoria, low volatility, false permanence.",
-        9: "Release – Climax, blow-off top or crash, dissolution.",
+        0: "PLENARA — reset/void interpretation in this market-data prototype.",
+        1: "SPARK OF NAVIGATION — early directional movement with high uncertainty.",
+        2: "FORGE OF POLARITY — consolidation and conflicting market signals.",
+        3: "ENGINE OF EXPRESSION — breakout attempt and directional expression.",
+        4: "CRUCIBLE OF EQUILIBRIUM — sustainable trend and comparatively orderly pullbacks.",
+        5: "DYNAMO OF WILL — decision threshold with elevated tension and volatility.",
+        6: "NEXUS OF HARMONY — smooth trend and comparatively low volatility.",
+        7: "LENS OF DISTILLATION — divergence and possible distribution signals.",
+        8: "VESSEL OF GROUNDING — euphoria/permanence-trap interpretation in this prototype.",
+        9: "TRANSPARENCY OF THE GUIDE — terminal/release interpretation for extreme market conditions.",
     }
 
     # ---------------------------------------------------------------------------
