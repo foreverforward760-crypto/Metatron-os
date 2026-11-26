@@ -98,6 +98,7 @@ class AnalysisResponse(BaseModel):
     user: UserAnalysis
     threats: List[ThreatAlert]
     recommendations: List[str]
+    analysis_notice: str
 
 
 class StageInfo(BaseModel):
