@@ -8,7 +8,7 @@ from app.threat_intel import ThreatIntel
 
 @pytest.fixture
 def intel():
-    return ThreatIntel()
+    return ThreatIntel(use_mock_data=True)
 
 
 class TestScanAsset:
