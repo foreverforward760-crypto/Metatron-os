@@ -62,4 +62,4 @@ The tests use synthetic inputs and explicit mock threat examples. Passing them v
 
 ## Conceptual origin and implementation
 
-The project owner states that the underlying concepts and framework originated with him. AI systems generated the software code and suggested implementation mechanisms. This statement records the owner's account and is not a legal determination of copyright ownership, inventorship, or exclusive rights. Review third-party licenses, dependencies, and AI-service terms before commercial transfer.
+The project owner states that the underlying concepts and the 0-9-0 / SAP framework originated with him. AI systems generated the implementation code and suggested technical mechanisms. NSDT and the Container Rule were introduced by AI as supporting implementation mechanisms within the owner's framework, not as independent conceptual origins. This records the owner's account and is not a legal determination of copyright ownership, inventorship, or exclusive rights. Review third-party licenses, dependencies, and AI-service terms before commercial transfer.
