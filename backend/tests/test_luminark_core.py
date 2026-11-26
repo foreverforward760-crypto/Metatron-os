@@ -8,7 +8,7 @@ from app.luminark_core import LuminarkAI
 
 @pytest.fixture
 def ai():
-    return LuminarkAI()
+    return LuminarkAI(use_mock_threat_data=True)
 
 
 MOCK_USER_DATA = {
